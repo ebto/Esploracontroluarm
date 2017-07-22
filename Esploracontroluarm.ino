@@ -16,7 +16,7 @@
  * Subsequent variations will leverage feedback via Arduino TFT LCD
  * 
  * Created: 22 July 2017 
- * Author: Eric Ong (ako.si.eric@gmail.com)
+ * Author: Eric Ong (a.k.a., ebto on GitHub)
  * Credits: sketch is based on sample provided on Arduino IDE - EsploraKart,
  * written by Enrico Gueli. Original comments are left as-is, 
  * 
