@@ -131,8 +131,15 @@ void loop() {
   Serial.println();
   if (lightval <= 250) {
     Keyboard.press('R');
+
+    //Play tune to notify reset command
+    Esplora.tone(988,100);
     delay(100);
+    Esplora.tone(1319,850);
+    delay(800);
+    
     Keyboard.release('R');
+    Esplora.noTone();
   }
 
   
@@ -154,8 +161,7 @@ void loop() {
     }
 
     // Pressing down sends keyboard command to activate end effector suction or gripper 
-    int suction = Esplora.readJoystickButton();
-    if(suction == LOW) {
+    if (Esplora.readJoystickButton() == LOW) {
       Keyboard.press(' ');
     } else {
       Keyboard.release(' ');
