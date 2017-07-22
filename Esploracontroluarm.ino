@@ -1,0 +1,175 @@
+/*
+ * Esplora Contols uArm (Swfit Pro via uArmStudio)
+ * 
+ * This sketch uses Esplora's keyboard emulation to control
+ * uArm Swfit Pro (4 DOF robot arm) via uArm Studio Control module.
+ * 
+ * The Esplora joysticks control x- and y- axes, 
+ * up/down switch controls z-axis and left/right switch 
+ * controls 4 motor (wrist). 
+ * 
+ * Joystick button pushed down activates suction/gripper end
+ * effector, and covering light sensor resets the uArm to a
+ * default postion - if raw value goes below 250.
+ * 
+ * This is the first quick and simple version to quickly try out idea.
+ * Subsequent variations will leverage feedback via Arduino TFT LCD
+ * 
+ * Created: 22 July 2017 
+ * Author: Eric Ong (ako.si.eric@gmail.com)
+ * Credits: sketch is based on sample provided on Arduino IDE - EsploraKart,
+ * written by Enrico Gueli. Original comments are left as-is, 
+ * 
+ */
+
+/*
+  Esplora Kart
+
+  This sketch turns the Esplora into a PC game pad.
+
+  It uses the both the analog joystick and the four switches.
+  By moving the joystick in a direction or by pressing a switch,
+  the PC will "see" that a key is pressed. If the PC is running
+  a game that has keyboard input, the Esplora can control it.
+
+  The default configuration is suitable for SuperTuxKart, an
+  open-source racing game. It can be downloaded from
+  http://supertuxkart.sourceforge.net/ .
+
+  Created on 22 november 2012
+  By Enrico Gueli <enrico.gueli@gmail.com>
+*/
+
+#include <Esplora.h>
+#include <Keyboard.h>
+
+/*
+  You're going to handle eight different buttons. You'll use arrays,
+  which are ordered lists of variables with a fixed size. Each array
+  has an index (counting from 0) to keep track of the position
+  you're reading in the array, and each position can contain a number.
+
+  This code uses three different arrays: one for the buttons you'll read;
+  a second to hold the current states of those buttons; and a third to hold
+  the keystrokes associated with each button.
+ */
+
+/*
+  This array holds the last sensed state of each of the buttons
+  you're reading.
+  Later in the code, you'll read the button states, and compare them
+  to the previous states that are stored in this array. If the two
+  states are different, it means that the button was either
+  pressed or released.
+ */
+boolean buttonStates[8];
+
+/*
+  This array holds the names of the buttons being read.
+  Later in the sketch, you'll use these names with
+  the method Esplora.readButton(x), where x
+  is one of these buttons.
+ */
+const byte buttons[] = {
+  JOYSTICK_DOWN,    //X-axis down
+  JOYSTICK_LEFT,    //Y-axis left
+  JOYSTICK_UP,      //X-axis up
+  JOYSTICK_RIGHT,   //Y-axis right
+  SWITCH_RIGHT,     // wrist turn < 90 degrees
+  SWITCH_LEFT,      // wrist turn > 90 degrees
+  SWITCH_UP,        // Z-axis up
+  SWITCH_DOWN       // Z-axis down
+};
+
+/*
+  This array tells what keystroke to send to the PC when a
+  button is pressed.
+  If you look at this array and the above one, you can see that
+  the "cursor down" keystroke is sent when the joystick is moved
+  down, the "cursor up" keystroke when the joystick is moved up
+  and so on.
+*/
+const char keystrokes[] = {
+  'S',
+  'A',
+  'W',
+  'D',
+  KEY_RIGHT_ARROW,
+  KEY_LEFT_ARROW,
+  KEY_UP_ARROW,
+  KEY_DOWN_ARROW
+ };
+
+/*
+  This is code is run only at startup, to initialize the
+  virtual USB keyboard.
+*/
+void setup() {
+  Serial.begin(9600);  //show value on serial terminal or plotter
+  Keyboard.begin();
+}
+
+/*
+  After setup() is finished, this code is run continuously.
+  Here we continuously check if something happened with the
+  buttons.
+*/
+void loop() {
+
+  // This reads slider value and maps to controlling motor speed
+  int sliderval = Esplora.readSlider();
+  int armspeed = map(sliderval, 1023, 0, 1, 9);
+  Serial.print("Slider value: ");
+  Serial.print(sliderval);
+  Serial.print("| Arm speed: ");
+  Serial.print(armspeed);
+
+  // Send keyboard command "R" to reset arm if light sensor is covered
+  int lightval = Esplora.readLightSensor();
+  Serial.print(" | Light value: ");
+  Serial.print(lightval);
+  Serial.println();
+  if (lightval <= 250) {
+    Keyboard.press('R');
+    delay(100);
+    Keyboard.release('R');
+  }
+
+  
+  // Iterate through all the buttons:
+  for (byte thisButton = 0; thisButton < 8; thisButton++) {
+    boolean lastState = buttonStates[thisButton];
+    boolean newState = Esplora.readButton(buttons[thisButton]);
+    if (lastState != newState) { // Something changed!
+      /*
+        The Keyboard library allows you to "press" and "release" the
+        keys as two distinct actions. These actions can be
+        linked to the buttons we're handling.
+       */
+      if (newState == PRESSED) {
+        Keyboard.press(keystrokes[thisButton]);
+      } else if (newState == RELEASED) {
+        Keyboard.release(keystrokes[thisButton]);
+      }     
+    }
+
+    // Pressing down sends keyboard command to activate end effector suction or gripper 
+    int suction = Esplora.readJoystickButton();
+    if(suction == LOW) {
+      Keyboard.press(' ');
+    } else {
+      Keyboard.release(' ');
+    }
+    // Store the new button state, so you can sense a difference later:
+    buttonStates[thisButton] = newState;
+  }
+
+  /*
+    Wait a little bit (50ms) between a check and another.
+    When a mechanical switch is pressed or released, the
+    contacts may bounce very rapidly. If the check is done too
+    fast, these bounces may be confused as multiple presses and
+    may lead to unexpected behaviour.
+   */
+  delay(50);
+}
