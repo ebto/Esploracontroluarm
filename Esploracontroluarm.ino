@@ -1,5 +1,5 @@
 /*
- * Esplora Contols uArm (Swfit Pro via uArmStudio)
+ * Esplora Contols uArm (Swift Pro via uArmStudio)
  * 
  * This sketch uses Esplora's keyboard emulation to control
  * uArm Swfit Pro (4 DOF robot arm) via uArm Studio Control module.
